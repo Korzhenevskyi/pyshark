@@ -24,11 +24,15 @@ def store_packet_as_json(packet, i):
 
 
 # -------------------- Malicious payload detections -----------------
-def check_the_packet_for_harm(packet, url):
+url = os.getenv("CHECKER_URL")
+
+def is_packet_harmful(packet):
     res = requests.post(url=url, json=json.dumps(packet, cls=CustomEncoder))
     res.raise_for_status() # handle this exception!
     res_json = res.json() # this can also throw
-    return res_json["result"]
+    return res_json["result"] != 0
+
+# TODO: check how to block traffic on a machine
 
 
 # -------------------- Capturing ------------------------------------
