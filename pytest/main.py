@@ -19,18 +19,23 @@ class CustomEncoder(json.JSONEncoder):
         return o.__dict__
 
 def store_packet_as_json(packet, i):
-    with open('%s/packet %d.json' % (directory, i), 'a') as w:
+    with open('%s/packet_%d.json' % (directory, i), 'a') as w:
         w.write(json.dumps(packet, cls=CustomEncoder))
 
 
 # -------------------- Malicious payload detections -----------------
 def check_the_packet_for_harm(packet, url):
-    requests.post(url=url, json=json.dumps(packet, cls=CustomEncoder))
+    res = requests.post(url=url, json=json.dumps(packet, cls=CustomEncoder))
+    res.raise_for_status() # handle this exception!
+    res_json = res.json() # this can also throw
+    return res_json["result"]
 
 
-capture = pyshark.LiveCapture(interface='wifi')
-capture.sniff(timeout=20)
+# -------------------- Capturing ------------------------------------
+capture = pyshark.LiveCapture() # if no interface is given all the interfaces are captured
+i = 0
 
-for i in range(len(capture)):
-    print("packet "+str(i))
-    store_packet_as_json(capture[i], i)
+for packet in capture.sniff_continuously(): # capture.apply_on_packets(packet_callback) can be used instead
+    print("packet %d is captured" % i)
+    store_packet_as_json(packet, i)
+    i += 1
